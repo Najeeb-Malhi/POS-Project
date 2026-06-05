@@ -1,0 +1,368 @@
+import json
+import os
+import tkinter as tk
+from tkinter import ttk, messagebox
+from tkinter import simpledialog
+from datetime import datetime
+#Files
+INVENTORY_FILE = "inventory.json"
+REPORT_FILE = "report.json"
+INVOICE_FILE = "invoice.txt"
+# GLOBAL DATA
+inventory = []
+cart = []
+report = {"total_profit": 0, "products_sold": {}}
+# DATA FUNCTIONS
+def load_inventory():
+    global inventory
+    if os.path.exists(INVENTORY_FILE):
+        with open(INVENTORY_FILE, "r") as f:
+            inventory = json.load(f)
+            for p in inventory:
+                p.setdefault("cost_price", p.get("price", 0))
+                p.setdefault("sale_price", p.get("price", 0))
+    else:
+        inventory = []
+def save_inventory():
+    with open(INVENTORY_FILE, "w") as f:
+        json.dump(inventory, f, indent=4)
+def show_all_products():
+    search_var.set("")
+    refresh_inventory()
+def load_report():
+    global report
+    if os.path.exists(REPORT_FILE):
+        with open(REPORT_FILE, "r") as f:
+            report = json.load(f)
+def save_report():
+    with open(REPORT_FILE, "w") as f:
+        json.dump(report, f, indent=4)
+def get_next_invoice():
+    num = 0
+    if os.path.exists(INVOICE_FILE):
+        with open(INVOICE_FILE, "r") as f:
+            num = int(f.read())
+    num += 1
+    with open(INVOICE_FILE, "w") as f:
+        f.write(str(num))
+    return num
+def find_product(pid):
+    for p in inventory:
+        if p["id"] == pid:
+            return p
+    return None
+
+#UI SETUP
+root = tk.Tk()
+root.title("Grocery Shop POS")
+root.geometry("1000x550")
+root.configure(bg="gray")
+root.grid_rowconfigure(0, weight=1)
+root.grid_columnconfigure(0, weight=1)
+root.grid_columnconfigure(1, weight=1)
+# INVENTORY FRAME
+inv_frame = tk.LabelFrame(root, text="Inventory", bg="white", font=("Arial", 18, "bold"))
+inv_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+search_var = tk.StringVar()
+def search_inventory(*args):
+    text = search_var.get().lower()
+    inv_tree.delete(*inv_tree.get_children())
+    for p in inventory:
+        if text in p["name"].lower():
+            insert_inventory_row(p)
+search_var.trace("w", search_inventory)
+tk.Entry(inv_frame, textvariable=search_var).pack(fill=tk.X, padx=5, pady=5)
+inv_tree = ttk.Treeview(inv_frame, columns=("ID","Name","Price","Qty"), show="headings")
+for c in ("ID","Name","Price","Qty"):
+    inv_tree.heading(c, text=c)
+    inv_tree.column(c, width=100)
+inv_tree.pack(fill=tk.BOTH, expand=True)
+def insert_inventory_row(p):
+    row = inv_tree.insert("", tk.END, values=(p["id"], p["name"], p["sale_price"], p["qty"]))
+    if p["qty"] <= 10:
+        inv_tree.item(row, tags=("low",))
+    inv_tree.tag_configure("low", background="#ffcccc")
+def refresh_inventory():
+    inv_tree.delete(*inv_tree.get_children())
+    for p in inventory:
+        insert_inventory_row(p)
+cart_frame = tk.LabelFrame(root, text="Cart", bg="white", font=("Arial", 12, "bold"))
+cart_frame.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
+cart_tree = ttk.Treeview(cart_frame, columns=("Name","Qty","Total"), show="headings")
+for c in ("Name","Qty","Total"):
+    cart_tree.heading(c, text=c)
+    cart_tree.column(c, width=150)
+cart_tree.pack(fill=tk.BOTH, expand=True)
+def refresh_cart():
+    cart_tree.delete(*cart_tree.get_children())
+    for i in cart:
+        cart_tree.insert("", tk.END, values=(i["name"], i["qty"], i["qty"]*i["sale_price"]))
+#PRODUCT WINDOW 
+def add_product_ui():
+    win = tk.Toplevel(root)
+    win.title("Add Product")
+    win.geometry("300x350")
+    fields = {}
+    for lbl in ["ID","Name","Cost Price","Sale Price","Quantity"]:
+        tk.Label(win, text=lbl).pack()
+        e = tk.Entry(win)
+        e.pack()
+        fields[lbl] = e
+    def save():
+        try:
+            pid = int(fields["ID"].get())
+            if find_product(pid):
+                messagebox.showerror("Error","Product ID exists")
+                return
+            cost = float(fields["Cost Price"].get())
+            sale = float(fields["Sale Price"].get())
+            if sale <= cost:
+                messagebox.showerror("Error","Sale must be greater than cost")
+                return
+            product = {
+                "id": pid,
+                "name": fields["Name"].get(),
+                "cost_price": cost,
+                "sale_price": sale,
+                "qty": int(fields["Quantity"].get())
+            }
+            inventory.append(product)
+            save_inventory()
+            refresh_inventory()
+            win.destroy()
+        except:
+            messagebox.showerror("Error","Invalid input")
+    tk.Button(win, text="Save Product", command=save).pack(pady=10)
+def edit_product_ui():
+    sel = inv_tree.selection()
+    if not sel:
+        return
+    pid = inv_tree.item(sel[0])["values"][0]
+    product = find_product(pid)
+    if not product:
+        return
+    win = tk.Toplevel(root)
+    win.title("Edit Product")
+    win.geometry("300x300")
+    fields = {}
+    for k in ["name","cost_price","sale_price","qty"]:
+        tk.Label(win, text=k).pack()
+        e = tk.Entry(win)
+        e.insert(0, product[k])
+        e.pack()
+        fields[k] = e
+    def save():
+        try:
+            cost = float(fields["cost_price"].get())
+            sale = float(fields["sale_price"].get())
+            if sale <= cost:
+                messagebox.showerror("Error","Invalid price")
+                return
+            product.update({
+                "name": fields["name"].get(),
+                "cost_price": cost,
+                "sale_price": sale,
+                "qty": int(fields["qty"].get())
+            })
+            save_inventory()
+            refresh_inventory()
+            win.destroy()
+        except:
+            messagebox.showerror("Error","Invalid input")
+
+    tk.Button(win, text="Save", command=save).pack(pady=10)
+def delete_product_ui():
+    sel = inv_tree.selection()
+    if not sel:
+        return
+    pid = inv_tree.item(sel[0])["values"][0]
+    if messagebox.askyesno("Confirm","Delete product?"):
+        global inventory
+        inventory = [p for p in inventory if p["id"] != pid]
+        save_inventory()
+        refresh_inventory()
+def update_stock_ui():
+    sel = inv_tree.selection()
+    if not sel:
+        messagebox.showerror("Error", "Select a product first")
+        return
+    pid = inv_tree.item(sel[0])["values"][0]
+    product = find_product(pid)
+    qty = simpledialog.askinteger("Update Stock","Enter quantity to add:")
+    if qty is None:
+        return
+    if qty <= 0:
+        messagebox.showerror("Error","Quantity must be greater than zero")
+        return
+    product["qty"] += qty
+    save_inventory()
+    refresh_inventory()
+    messagebox.showinfo("Success","Stock updated successfully")
+# CART / BILL
+def add_to_cart_ui():
+    sel = inv_tree.selection()
+    if not sel:
+        return
+    pid = inv_tree.item(sel[0])["values"][0]
+    product = find_product(pid)
+    if not product:
+        return
+    qty = tk.simpledialog.askinteger("Qty","Enter quantity")
+    if not qty or qty > product["qty"]:
+        return
+    cart.append({"name": product["name"],"qty": qty,"sale_price": product["sale_price"],"cost_price": product["cost_price"]})
+    product["qty"] -= qty
+    save_inventory()
+    refresh_inventory()
+    refresh_cart()
+def remove_from_cart_ui():
+    sel = cart_tree.selection()
+    if not sel:
+        return
+    item_name = cart_tree.item(sel[0])["values"][0]
+    for item in cart:
+        if item["name"] == item_name:
+            product = next((p
+                    for p in inventory
+                    if p["name"] == item_name
+                ),
+                None
+            )
+            if product:
+                product["qty"] += item["qty"]
+            cart.remove(item)
+            save_inventory()
+            refresh_inventory()
+            refresh_cart()
+            break
+def generate_bill_ui():
+    if not cart:
+        messagebox.showerror("Error", "Cart is empty!")
+        return
+    win = tk.Toplevel(root)
+    win.title("Customer Details")
+    win.geometry("350x300")
+    entries = {}
+    for lbl in ["Customer Name", "Phone", "Payment Method", "Discount %"]:
+        tk.Label(win, text=lbl).pack(pady=2)
+        e = tk.Entry(win)
+        e.pack(fill="x", padx=10)
+        entries[lbl] = e
+    def submit():
+        invoice = get_next_invoice()
+        customer_name = entries["Customer Name"].get()
+        customer_phone = entries["Phone"].get()
+        payment_method = entries["Payment Method"].get()
+        try:
+            discount = float(entries["Discount %"].get() or 0)
+        except ValueError:
+            messagebox.showerror("Error", "Invalid discount value")
+            return
+        now = datetime.now()
+        total = 0
+        text = (
+            f"==============================\n"
+            f"GENERAL STORE\n"
+            f"Invoice #{invoice}\n"
+            f"Date: {now.strftime('%d-%m-%Y')}\n"
+            f"Time: {now.strftime('%H:%M:%S')}\n"
+            f"------------------------------\n"
+            f"Customer: {customer_name}\n"
+            f"Phone: {customer_phone}\n"
+            f"Payment: {payment_method}\n"
+            f"------------------------------\n"
+        )
+        for i in cart:
+            line = i["qty"] * i["sale_price"]
+            total += line
+            profit = (
+                i["sale_price"] - i["cost_price"]
+            ) * i["qty"]
+            report["total_profit"] += profit
+            report["products_sold"].setdefault(
+                i["name"],
+                {
+                    "qty_sold": 0,
+                    "profit": 0
+                }
+            )
+            report["products_sold"][i["name"]]["qty_sold"] += i["qty"]
+            report["products_sold"][i["name"]]["profit"] += profit
+            text += (
+                f"{i['name']} | "
+                f"{i['qty']} x "
+                f"{i['sale_price']} = "
+                f"Rs {line}\n"
+            )
+        discount_amount = (total * discount) / 100
+        final_total = total - discount_amount
+        text += (
+            f"------------------------------\n"
+            f"Subtotal: Rs {total:.2f}\n"
+            f"Discount ({discount}%): Rs {discount_amount:.2f}\n"
+            f"TOTAL: Rs {final_total:.2f}\n"
+            f"==============================\n"
+        )
+        with open(f"bill_{invoice}.txt", "w") as f:
+            f.write(text)
+        save_report()
+        messagebox.showinfo("Generated Bill", text)
+        cart.clear()
+        refresh_cart()
+        win.destroy()
+    tk.Button(
+        win,
+        text="Generate Bill",
+        command=submit
+    ).pack(pady=10)
+def show_report():
+    win = tk.Toplevel(root)
+    win.title("Monthly Report")
+    win.geometry("700x450")
+    total_profit = report.get("total_profit", 0)
+    tk.Label(
+        win,
+        text=f"Total Profit: Rs {total_profit}",
+        font=("Arial", 14, "bold")
+    ).pack(pady=10)
+    tree = ttk.Treeview(
+        win,
+        columns=("Product", "Qty Sold", "Profit"),
+        show="headings"
+    )
+    tree.heading("Product", text="Product")
+    tree.heading("Qty Sold", text="Qty Sold")
+    tree.heading("Profit", text="Profit")
+    tree.column("Product", width=250)
+    tree.column("Qty Sold", width=120, anchor="center")
+    tree.column("Profit", width=120, anchor="center")
+    tree.pack(fill="both", expand=True, padx=10, pady=10)
+    for name, data in report.get("products_sold", {}).items():
+        tree.insert(
+            "",
+            tk.END,
+            values=(
+                name,
+                data["qty_sold"],
+                f"Rs {data['profit']}"
+            )
+        )
+# BUTTONS 
+
+btn = tk.Frame(root,bg="white")
+btn.grid(row=1, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
+tk.Button(btn,text="Update Stock",command=update_stock_ui,width=18,height=2).grid(row=1, column=0, padx=5)
+tk.Button(btn,text="Add Product",command=add_product_ui,width=18,height=2).grid(row=0,column=0,padx=5)
+tk.Button(btn,text="Edit Product",command=edit_product_ui,width=18,height=2).grid(row=0,column=2,padx=5)
+tk.Button(btn,text="Delete Product",command=delete_product_ui,width=18,height=2).grid(row=1,column=2,padx=5)
+tk.Button(btn,text="Add to Cart",command=add_to_cart_ui,width=18,height=2).grid(row=0,column=3,padx=5)
+tk.Button(btn,text="Remove From Cart",command=remove_from_cart_ui,width=18,height=2).grid(row=1, column=3, padx=5)
+tk.Button(btn,text="Generate Bill",command=generate_bill_ui,width=18,height=2).grid(row=0,column=4,padx=5)
+tk.Button(btn, text="Show Report", command=show_report, width=18,height=2).grid(row=0,column=1,padx=5)
+tk.Button(btn,text="Exit",command=root.destroy,width=18,height=2).grid(row=0,column=5,padx=5)
+
+#START
+load_inventory()
+load_report()
+refresh_inventory()
+root.mainloop()

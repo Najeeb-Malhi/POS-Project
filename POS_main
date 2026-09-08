@@ -64,13 +64,18 @@ root.grid_columnconfigure(1, weight=1)
 inv_frame = tk.LabelFrame(root, text="Inventory", bg="white", font=("Arial", 18, "bold"))
 inv_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
 search_var = tk.StringVar()
+search_var = tk.StringVar()
+
 def search_inventory(*args):
     text = search_var.get().lower()
+
     inv_tree.delete(*inv_tree.get_children())
+
     for p in inventory:
         if text in p["name"].lower():
             insert_inventory_row(p)
-search_var.trace("w", search_inventory)
+
+search_var.trace_add("write", search_inventory)
 tk.Entry(inv_frame, textvariable=search_var).pack(fill=tk.X, padx=5, pady=5)
 inv_tree = ttk.Treeview(inv_frame, columns=("ID","Name","Price","Qty"), show="headings")
 for c in ("ID","Name","Price","Qty"):

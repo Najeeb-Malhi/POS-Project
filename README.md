@@ -296,15 +296,15 @@ python main.py
 
 ## Inventory
 
-![Inventory Management](Screenshots/Inventory and Report.Json.png)
+![Inventory Management](Screenshots/Inventory_and_Report.Json.png)
 
 ## Billing
 
-![Billing System](Screenshots/bill.png)
+![Billing System](Screenshots/Bill.png)
 
 ## Sales Report
 
-![Sales Report](Screenshots/Reports.png)
+![Sales Report](Screenshots/Report.png)
 
 ---
 

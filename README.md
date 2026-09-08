@@ -292,19 +292,19 @@ python main.py
 
 ## Main Interface
 
-![Main Interface](screenshots/Home.png)
+![Main Interface](Screenshots/Home.png)
 
 ## Inventory
 
-![Inventory Management](screenshots/inventory.png)
+![Inventory Management](Screenshots/Inventory and Report.Json.png)
 
 ## Billing
 
-![Billing System](screenshots/billing.png)
+![Billing System](Screenshots/bill.png)
 
 ## Sales Report
 
-![Sales Report](screenshots/reports.png)
+![Sales Report](Screenshots/Reports.png)
 
 ---
 

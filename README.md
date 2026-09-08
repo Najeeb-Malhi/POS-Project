@@ -292,7 +292,7 @@ python main.py
 
 ## Main Interface
 
-![Main Interface](screenshots/main.png)
+![Main Interface](screenshots/Home.png)
 
 ## Inventory
 

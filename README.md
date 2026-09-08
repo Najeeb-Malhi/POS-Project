@@ -15,6 +15,7 @@ AI was used primarily for guidance, exploring implementation approaches, debuggi
 This project also helped me learn how to effectively use AI as a development assistant while building a better understanding of the underlying Python concepts and application logic.
 
 I believe the AI assisted development is most valuable when it is used as a tool for learning and improving development workflows rather than simply generating code without understanding it.
+
 ---
 ## 📌 Project Overview
 

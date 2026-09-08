@@ -1,4 +1,4 @@
-# 🛒 Point of Sale (POS) System
+# Point of Sale (POS) System
 
 A Python-based **Point of Sale (POS) system** developed for a grocery store to manage inventory, stock, billing, invoices, discounts, and sales reporting through a graphical user interface.
 

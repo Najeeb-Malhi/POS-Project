@@ -4,8 +4,18 @@ A Python-based **Point of Sale (POS) system** developed for a grocery store to m
 
 Although this is a student-developed desktop application, the project focuses on implementing **real-world business rules, input validation, inventory controls, and error prevention** rather than simply demonstrating basic Python functionality.
 
----
 
+---
+## AI Assisted Development
+
+This project was developed with the assistance of AI tools.
+
+AI was used primarily for guidance, exploring implementation approaches, debugging, and helping develop parts of the application. I made all the project decisions, implemented the logic, tested the functionality, identified and fixed the issues.
+
+This project also helped me learn how to effectively use AI as a development assistant while building a better understanding of the underlying Python concepts and application logic.
+
+I believe the AI assisted development is most valuable when it is used as a tool for learning and improving development workflows rather than simply generating code without understanding it.
+---
 ## 📌 Project Overview
 
 Managing a small grocery store involves more than simply adding products and calculating prices. Incorrect pricing, invalid stock quantities, accidental data changes, and billing errors can all cause problems.
